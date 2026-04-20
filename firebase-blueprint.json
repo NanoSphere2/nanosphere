@@ -1,0 +1,195 @@
+{
+  "entities": {
+    "Meeting": {
+      "title": "Meeting",
+      "description": "A meeting request from a potential client",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full name of the client"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the client"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the client"
+        },
+        "service": {
+          "type": "string",
+          "enum": ["eCommerce", "Web Dev", "Automation"],
+          "description": "The service the client is interested in"
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "The requested date for the meeting (ISO 8601)"
+        },
+        "time": {
+          "type": "string",
+          "description": "The requested time slot"
+        },
+        "message": {
+          "type": "string",
+          "description": "Optional message from the client"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected"],
+          "description": "Current status of the meeting request"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the request was created"
+        }
+      },
+      "required": ["name", "email", "phone", "service", "date", "time", "status", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Application user profile",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "user"]
+        }
+      },
+      "required": ["email", "role"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "A customer review and rating",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the user who wrote the review"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the reviewer"
+        },
+        "rating": {
+          "type": "number",
+          "description": "Rating from 1 to 5"
+        },
+        "message": {
+          "type": "string",
+          "description": "The review text"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the review was submitted"
+        }
+      },
+      "required": ["userId", "name", "rating", "message", "createdAt"]
+    },
+    "VoiceMessage": {
+      "title": "VoiceMessage",
+      "description": "A voice message from a user",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the user (if logged in)"
+        },
+        "audioUrl": {
+          "type": "string",
+          "description": "URL to the stored audio file"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Duration of the recording in seconds"
+        },
+        "transcription": {
+          "type": "string",
+          "description": "AI-generated transcription of the audio"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["new", "listened", "responded"],
+          "description": "Processing status of the message"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the message was sent"
+        }
+      },
+      "required": ["audioUrl", "duration", "status", "createdAt"]
+    },
+    "Enrollment": {
+      "title": "Enrollment",
+      "description": "A service enrollment and payment record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user (if authenticated)" },
+        "name": { "type": "string", "description": "Full name of the client" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "service": { "type": "string", "description": "Selected service name" },
+        "price": { "type": "number", "description": "Paid amount" },
+        "status": { "type": "string", "enum": ["pending", "paid", "pending verification", "approved", "rejected"], "description": "Payment status" },
+        "paymentMethod": { "type": "string", "description": "Method used for payment" },
+        "paymentDetails": { "type": "object", "description": "Details submitted for payment verification" },
+        "discountCode": { "type": "string", "description": "Applied discount code" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["name", "email", "service", "price", "status", "createdAt"]
+    },
+    "PartnershipRequest": {
+      "title": "PartnershipRequest",
+      "description": "A request to join the seller or investor program",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user (if authenticated)" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "type": { "type": "string", "enum": ["seller", "investor"] },
+        "platform": { "type": "string", "enum": ["eBay", "Amazon", "Walmart", "none"] },
+        "investmentAmount": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "contacted", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "phone", "type", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/meetings/{meetingId}": {
+      "schema": "Meeting",
+      "description": "Collection of meeting requests"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles and roles"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Collection of customer reviews"
+    },
+    "/voiceMessages/{messageId}": {
+      "schema": "VoiceMessage",
+      "description": "Collection of voice messages from users"
+    },
+    "/enrollments/{enrollmentId}": {
+      "schema": "Enrollment",
+      "description": "Collection of service enrollments and payments"
+    },
+    "/partnershipRequests/{requestId}": {
+      "schema": "PartnershipRequest",
+      "description": "Collection of partnership and investment requests"
+    }
+  }
+}

@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "rolkgggt@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    match /meetings/{meetingId} {
+      allow create: if hasRequiredFields(['name', 'email', 'phone', 'service', 'date', 'time', 'status', 'createdAt']) && 
+                      hasOnlyAllowedFields(['name', 'email', 'phone', 'service', 'date', 'time', 'status', 'createdAt', 'message']) &&
+                      request.resource.data.status == 'pending' &&
+                      request.resource.data.createdAt is timestamp;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      function isValidReview() {
+        return hasRequiredFields(['userId', 'name', 'rating', 'message', 'createdAt']) &&
+               hasOnlyAllowedFields(['userId', 'name', 'rating', 'message', 'createdAt']) &&
+               request.resource.data.userId == request.auth.uid &&
+               request.resource.data.rating is number &&
+               request.resource.data.rating >= 1 &&
+               request.resource.data.rating <= 5 &&
+               request.resource.data.message is string &&
+               request.resource.data.message.size() <= 500 &&
+               request.resource.data.name is string &&
+               request.resource.data.name.size() <= 50;
+      }
+
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidReview();
+      allow update, delete: if isAdmin();
+    }
+
+    match /voiceMessages/{messageId} {
+      function isValidVoiceMessage() {
+        return hasRequiredFields(['audioUrl', 'duration', 'status', 'createdAt']) &&
+               hasOnlyAllowedFields(['userId', 'audioUrl', 'duration', 'transcription', 'status', 'createdAt']) &&
+               request.resource.data.audioUrl is string &&
+               request.resource.data.duration is number &&
+               request.resource.data.status == 'new' &&
+               request.resource.data.createdAt is timestamp;
+      }
+
+      allow create: if isValidVoiceMessage() && 
+                      (!('userId' in request.resource.data) || (isAuthenticated() && request.resource.data.userId == request.auth.uid));
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /enrollments/{enrollmentId} {
+      function isValidEnrollment() {
+        return hasRequiredFields(['name', 'email', 'service', 'price', 'status', 'createdAt']) &&
+               hasOnlyAllowedFields(['userId', 'name', 'email', 'phone', 'service', 'price', 'status', 'paymentMethod', 'paymentDetails', 'discountCode', 'createdAt']) &&
+               request.resource.data.price is number &&
+               request.resource.data.status in ['pending', 'paid', 'pending verification', 'approved', 'rejected'] &&
+               request.resource.data.createdAt is timestamp;
+      }
+
+      allow create: if isValidEnrollment() &&
+                      (!('userId' in request.resource.data) || (isAuthenticated() && request.resource.data.userId == request.auth.uid));
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /partnershipRequests/{requestId} {
+      function isValidPartnershipRequest() {
+        return hasRequiredFields(['name', 'email', 'phone', 'type', 'status', 'createdAt']) &&
+               hasOnlyAllowedFields(['userId', 'name', 'email', 'phone', 'type', 'platform', 'investmentAmount', 'message', 'status', 'createdAt']) &&
+               request.resource.data.status == 'pending' &&
+               request.resource.data.type in ['seller', 'investor'] &&
+               request.resource.data.createdAt is timestamp;
+      }
+
+      allow create: if isValidPartnershipRequest() &&
+                      (!('userId' in request.resource.data) || (isAuthenticated() && request.resource.data.userId == request.auth.uid));
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}
